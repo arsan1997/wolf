@@ -1,0 +1,147 @@
+import { useState, useEffect, useCallback } from 'react';
+import { socket } from '../services/socket';
+import { SOCKET_EVENTS } from '../constants/events';
+import { getStoredPlayerId, getStoredPlayerName } from '../utils/storage';
+
+export const useGameState = () => {
+  const [room, setRoom] = useState(null);
+  const [error, setError] = useState(null);
+  const [toast, setToast] = useState(null);
+  const [seerResult, setSeerResult] = useState(null);
+
+  const playerId = getStoredPlayerId();
+
+  const showToast = useCallback((message, type = 'info') => {
+    setToast({ message, type, id: Date.now() });
+  }, []);
+
+  const clearToast = useCallback(() => {
+    setToast(null);
+  }, []);
+
+  useEffect(() => {
+    const handleRoomUpdated = (updatedRoom) => {
+      setRoom(updatedRoom);
+    };
+
+    const handleSeerResult = (result) => {
+      setSeerResult(result);
+    };
+
+    const handleErrorMessage = ({ message }) => {
+      setError(message);
+      showToast(message, 'error');
+    };
+
+    const handlePlayerReconnected = ({ message }) => {
+      showToast(message, 'success');
+    };
+
+    socket.on(SOCKET_EVENTS.ROOM_UPDATED, handleRoomUpdated);
+    socket.on(SOCKET_EVENTS.SEER_RESULT, handleSeerResult);
+    socket.on(SOCKET_EVENTS.ERROR_MESSAGE, handleErrorMessage);
+    socket.on(SOCKET_EVENTS.PLAYER_RECONNECTED, handlePlayerReconnected);
+
+    return () => {
+      socket.off(SOCKET_EVENTS.ROOM_UPDATED, handleRoomUpdated);
+      socket.off(SOCKET_EVENTS.SEER_RESULT, handleSeerResult);
+      socket.off(SOCKET_EVENTS.ERROR_MESSAGE, handleErrorMessage);
+      socket.off(SOCKET_EVENTS.PLAYER_RECONNECTED, handlePlayerReconnected);
+    };
+  }, [showToast]);
+
+  const createRoom = (playerName) => {
+    socket.emit(SOCKET_EVENTS.CREATE_ROOM, { playerId, playerName });
+  };
+
+  const joinRoom = (roomCode, playerName) => {
+    socket.emit(SOCKET_EVENTS.JOIN_ROOM, { roomCode, playerId, playerName });
+  };
+
+  const toggleReady = () => {
+    if (room) {
+      socket.emit(SOCKET_EVENTS.TOGGLE_READY, { roomCode: room.id, playerId });
+    }
+  };
+
+  const startGame = () => {
+    if (room) {
+      socket.emit(SOCKET_EVENTS.START_GAME, { roomCode: room.id, playerId });
+    }
+  };
+
+  const confirmRole = () => {
+    if (room) {
+      socket.emit(SOCKET_EVENTS.CONFIRM_ROLE, { roomCode: room.id, playerId });
+    }
+  };
+
+  const submitNightAction = (targetPlayerId) => {
+    if (room) {
+      socket.emit(SOCKET_EVENTS.SUBMIT_NIGHT_ACTION, { roomCode: room.id, playerId, targetPlayerId });
+    }
+  };
+
+  const confirmDayResult = () => {
+    if (room) {
+      socket.emit(SOCKET_EVENTS.CONFIRM_DAY_RESULT, { roomCode: room.id, playerId });
+    }
+  };
+
+  const skipDiscussion = () => {
+    if (room) {
+      socket.emit(SOCKET_EVENTS.SKIP_DISCUSSION, { roomCode: room.id, playerId });
+    }
+  };
+
+  const submitVote = (targetPlayerId) => {
+    if (room) {
+      socket.emit(SOCKET_EVENTS.SUBMIT_VOTE, { roomCode: room.id, playerId, targetPlayerId });
+    }
+  };
+
+  const confirmVoteResult = () => {
+    if (room) {
+      socket.emit(SOCKET_EVENTS.CONFIRM_VOTE_RESULT, { roomCode: room.id, playerId });
+    }
+  };
+
+  const leaveRoom = () => {
+    if (room) {
+      socket.emit(SOCKET_EVENTS.LEAVE_ROOM, { roomCode: room.id, playerId });
+      setRoom(null);
+    }
+  };
+
+  const playAgain = () => {
+    if (room) {
+      socket.emit(SOCKET_EVENTS.PLAY_AGAIN, { roomCode: room.id, playerId });
+    }
+  };
+
+  const me = room?.players?.find((p) => p.id === playerId) || null;
+
+  return {
+    room,
+    me,
+    playerId,
+    error,
+    toast,
+    seerResult,
+    clearSeerResult: () => setSeerResult(null),
+    showToast,
+    clearToast,
+    createRoom,
+    joinRoom,
+    toggleReady,
+    startGame,
+    confirmRole,
+    submitNightAction,
+    confirmDayResult,
+    skipDiscussion,
+    submitVote,
+    confirmVoteResult,
+    leaveRoom,
+    playAgain
+  };
+};
