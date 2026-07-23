@@ -9,9 +9,9 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3001;
-const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173';
 
-app.use(cors({ origin: CLIENT_URL, credentials: true }));
+// Allow all origins cleanly for cross-origin Socket.IO long-polling requests
+app.use(cors());
 app.use(express.json());
 
 app.get('/health', (req, res) => {
@@ -31,5 +31,4 @@ registerSocketHandlers(io);
 
 httpServer.listen(PORT, () => {
   console.log(`🐺 Werewolf Game Server running on port ${PORT}`);
-  console.log(`📡 CORS allowed for: ${CLIENT_URL}`);
 });
