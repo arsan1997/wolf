@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { Moon, Users, LogIn, PlusCircle } from 'lucide-react';
+import { Moon, LogIn, PlusCircle, Wifi, WifiOff, Loader2 } from 'lucide-react';
 import { getStoredPlayerName, setStoredPlayerName } from '../utils/storage';
 
-export const Home = ({ onCreateRoom, onJoinRoom }) => {
+export const Home = ({ onCreateRoom, onJoinRoom, isConnected, isLoading }) => {
   const [playerName, setPlayerName] = useState(getStoredPlayerName());
   const [roomCode, setRoomCode] = useState('');
   const [formError, setFormError] = useState('');
@@ -49,6 +49,19 @@ export const Home = ({ onCreateRoom, onJoinRoom }) => {
           <p className="text-xs tracking-widest text-slate-400 mt-1 uppercase font-semibold">
             Real-Time Online Browser Game
           </p>
+
+          {/* Connection Status Badge */}
+          <div className="mt-3 flex items-center justify-center">
+            {isConnected ? (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-950/80 border border-emerald-500/40 text-emerald-300 text-xs font-semibold">
+                <Wifi className="w-3.5 h-3.5 text-emerald-400" /> พร้อม เชื่อมต่อเซิร์ฟเวอร์เรียบร้อย
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-950/80 border border-amber-500/40 text-amber-300 text-xs font-semibold animate-pulse">
+                <Loader2 className="w-3.5 h-3.5 text-amber-400 animate-spin" /> กำลังเชื่อมต่อเซิร์ฟเวอร์...
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Main Card */}
@@ -81,10 +94,23 @@ export const Home = ({ onCreateRoom, onJoinRoom }) => {
             {/* Create Room Button */}
             <button
               onClick={handleCreate}
-              className="w-full py-4 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-sm shadow-lg shadow-purple-950/50 flex items-center justify-center gap-2 transition-all active:scale-95 group"
+              disabled={!isConnected || isLoading}
+              className={`w-full py-4 rounded-2xl font-bold text-sm shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95 group ${
+                isConnected && !isLoading
+                  ? 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white shadow-purple-950/50 cursor-pointer'
+                  : 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed'
+              }`}
             >
-              <PlusCircle className="w-5 h-5 group-hover:rotate-90 transition-transform" />
-              สร้างห้องใหม่ (Create Room)
+              {isLoading ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" /> กำลังสร้างห้อง...
+                </>
+              ) : (
+                <>
+                  <PlusCircle className="w-5 h-5 group-hover:rotate-90 transition-transform" />
+                  สร้างห้องใหม่ (Create Room)
+                </>
+              )}
             </button>
 
             <div className="flex items-center my-4">
@@ -107,9 +133,22 @@ export const Home = ({ onCreateRoom, onJoinRoom }) => {
               </div>
               <button
                 type="submit"
-                className="w-full py-3.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-purple-200 border border-purple-800/50 font-bold text-sm flex items-center justify-center gap-2 transition-all active:scale-95"
+                disabled={!isConnected || isLoading}
+                className={`w-full py-3.5 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 transition-all active:scale-95 ${
+                  isConnected && !isLoading
+                    ? 'bg-slate-800 hover:bg-slate-700 text-purple-200 border border-purple-800/50 cursor-pointer'
+                    : 'bg-slate-900 text-slate-600 border border-slate-800 cursor-not-allowed'
+                }`}
               >
-                <LogIn className="w-4 h-4" /> เข้าร่วมห้อง (Join Room)
+                {isLoading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" /> กำลังเข้าร่วมห้อง...
+                  </>
+                ) : (
+                  <>
+                    <LogIn className="w-4 h-4" /> เข้าร่วมห้อง (Join Room)
+                  </>
+                )}
               </button>
             </form>
           </div>

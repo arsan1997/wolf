@@ -12,6 +12,8 @@ export const App = () => {
     me,
     toast,
     seerResult,
+    isConnected,
+    isLoading,
     clearSeerResult,
     showToast,
     clearToast,
@@ -34,7 +36,12 @@ export const App = () => {
       <Toast toast={toast} onClose={clearToast} />
 
       {!room ? (
-        <Home onCreateRoom={createRoom} onJoinRoom={joinRoom} />
+        <Home
+          onCreateRoom={createRoom}
+          onJoinRoom={joinRoom}
+          isConnected={isConnected}
+          isLoading={isLoading}
+        />
       ) : room.status === GAME_STATES.LOBBY ? (
         <LobbyPage
           room={room}

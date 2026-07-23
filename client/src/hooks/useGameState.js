@@ -1,13 +1,15 @@
 import { useState, useEffect, useCallback } from 'react';
 import { socket } from '../services/socket';
 import { SOCKET_EVENTS } from '../constants/events';
-import { getStoredPlayerId, getStoredPlayerName } from '../utils/storage';
+import { getStoredPlayerId } from '../utils/storage';
 
 export const useGameState = () => {
   const [room, setRoom] = useState(null);
   const [error, setError] = useState(null);
   const [toast, setToast] = useState(null);
   const [seerResult, setSeerResult] = useState(null);
+  const [isConnected, setIsConnected] = useState(socket.connected);
+  const [isLoading, setIsLoading] = useState(false);
 
   const playerId = getStoredPlayerId();
 
@@ -20,8 +22,24 @@ export const useGameState = () => {
   }, []);
 
   useEffect(() => {
+    const onConnect = () => {
+      setIsConnected(true);
+      setIsLoading(false);
+    };
+
+    const onDisconnect = () => {
+      setIsConnected(false);
+    };
+
+    const onConnectError = (err) => {
+      setIsConnected(false);
+      setIsLoading(false);
+      showToast('กำลังพยายามเชื่อมต่อกับเซิร์ฟเวอร์...', 'info');
+    };
+
     const handleRoomUpdated = (updatedRoom) => {
       setRoom(updatedRoom);
+      setIsLoading(false);
     };
 
     const handleSeerResult = (result) => {
@@ -30,6 +48,7 @@ export const useGameState = () => {
 
     const handleErrorMessage = ({ message }) => {
       setError(message);
+      setIsLoading(false);
       showToast(message, 'error');
     };
 
@@ -37,12 +56,18 @@ export const useGameState = () => {
       showToast(message, 'success');
     };
 
+    socket.on('connect', onConnect);
+    socket.on('disconnect', onDisconnect);
+    socket.on('connect_error', onConnectError);
     socket.on(SOCKET_EVENTS.ROOM_UPDATED, handleRoomUpdated);
     socket.on(SOCKET_EVENTS.SEER_RESULT, handleSeerResult);
     socket.on(SOCKET_EVENTS.ERROR_MESSAGE, handleErrorMessage);
     socket.on(SOCKET_EVENTS.PLAYER_RECONNECTED, handlePlayerReconnected);
 
     return () => {
+      socket.off('connect', onConnect);
+      socket.off('disconnect', onDisconnect);
+      socket.off('connect_error', onConnectError);
       socket.off(SOCKET_EVENTS.ROOM_UPDATED, handleRoomUpdated);
       socket.off(SOCKET_EVENTS.SEER_RESULT, handleSeerResult);
       socket.off(SOCKET_EVENTS.ERROR_MESSAGE, handleErrorMessage);
@@ -51,10 +76,20 @@ export const useGameState = () => {
   }, [showToast]);
 
   const createRoom = (playerName) => {
+    if (!socket.connected) {
+      showToast('เซิร์ฟเวอร์ยังไม่พร้อม กรุณารอสักครู่...', 'error');
+      return;
+    }
+    setIsLoading(true);
     socket.emit(SOCKET_EVENTS.CREATE_ROOM, { playerId, playerName });
   };
 
   const joinRoom = (roomCode, playerName) => {
+    if (!socket.connected) {
+      showToast('เซิร์ฟเวอร์ยังไม่พร้อม กรุณารอสักครู่...', 'error');
+      return;
+    }
+    setIsLoading(true);
     socket.emit(SOCKET_EVENTS.JOIN_ROOM, { roomCode, playerId, playerName });
   };
 
@@ -128,6 +163,8 @@ export const useGameState = () => {
     error,
     toast,
     seerResult,
+    isConnected,
+    isLoading,
     clearSeerResult: () => setSeerResult(null),
     showToast,
     clearToast,
