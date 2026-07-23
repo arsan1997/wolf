@@ -1,6 +1,7 @@
 import { io } from 'socket.io-client';
 
-const SERVER_URL = import.meta.env.VITE_SERVER_URL || 'http://localhost:3001';
+// Use production Render URL as primary/fallback so all remote devices connect to Render
+const SERVER_URL = import.meta.env.VITE_SERVER_URL || 'https://wolf-96hv.onrender.com';
 
 export const socket = io(SERVER_URL, {
   autoConnect: true,
