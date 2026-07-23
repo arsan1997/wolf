@@ -22,6 +22,11 @@ export const useGameState = () => {
   }, []);
 
   useEffect(() => {
+    // Synchronize initial socket connection state immediately
+    if (socket.connected) {
+      setIsConnected(true);
+    }
+
     const onConnect = () => {
       setIsConnected(true);
       setIsLoading(false);
@@ -34,7 +39,6 @@ export const useGameState = () => {
     const onConnectError = (err) => {
       setIsConnected(false);
       setIsLoading(false);
-      showToast('กำลังพยายามเชื่อมต่อกับเซิร์ฟเวอร์...', 'info');
     };
 
     const handleRoomUpdated = (updatedRoom) => {
@@ -76,19 +80,11 @@ export const useGameState = () => {
   }, [showToast]);
 
   const createRoom = (playerName) => {
-    if (!socket.connected) {
-      showToast('เซิร์ฟเวอร์ยังไม่พร้อม กรุณารอสักครู่...', 'error');
-      return;
-    }
     setIsLoading(true);
     socket.emit(SOCKET_EVENTS.CREATE_ROOM, { playerId, playerName });
   };
 
   const joinRoom = (roomCode, playerName) => {
-    if (!socket.connected) {
-      showToast('เซิร์ฟเวอร์ยังไม่พร้อม กรุณารอสักครู่...', 'error');
-      return;
-    }
     setIsLoading(true);
     socket.emit(SOCKET_EVENTS.JOIN_ROOM, { roomCode, playerId, playerName });
   };
